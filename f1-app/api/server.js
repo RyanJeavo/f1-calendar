@@ -23,7 +23,7 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
   }
 });
 
-app.get("/calendar", (req, res) => {
+app.get("/raceThisWeek", (req, res) => {
   db.all(
     `SELECT * FROM calendar
     WHERE date(race) BETWEEN 
@@ -41,6 +41,34 @@ app.get("/calendar", (req, res) => {
   );
 });
 
+app.get("/nextRace", (req, res) => {
+  db.all(
+    `SELECT * FROM CALENDAR
+    WHERE date(race) > date('now')
+    LIMIT 1`,
+    [],
+    (err, rows) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(rows);
+    }
+  );
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
+});
+
+process.on("SIGINT", () => {
+  console.log("Shutting down gracefully...");
+  db.close((err) => {
+    if (err) {
+      console.error("Error closing database:", err);
+    } else {
+      console.log("Database connection closed.");
+    }
+    process.exit(0);
+  });
 });
